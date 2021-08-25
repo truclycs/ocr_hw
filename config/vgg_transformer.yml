@@ -1,0 +1,65 @@
+vocab_size: 233
+vocab: models/definitions/vocab.yml
+device: 'cpu'
+weights: models/weights/transformer/thesis_model.pth
+
+trainer:
+    batch_size: 8
+    display_cycle: 50  
+    valid_cycle: 1000
+    iters: 50000
+    weight_dir: models/weights/zzz.pth
+    checkpoint: models/weights/checkpoints/zzz
+    log_dir: models/weights/log/zzz.log
+
+dataset:    
+    name: 'all'
+    data_root: ./dataset/images/
+    train_annotation: ./dataset/annotation/all/train.txt
+    valid_annotation: ./dataset/annotation/all/val.txt
+    test_annotation: ./dataset/annotation/all/test.txt
+    expected_height: 64
+    image_min_width: 32
+    image_max_width: 1024
+
+seq_modeling: transformer
+transformer:  
+    d_model: 256
+    nhead: 8
+    num_encoder: 6
+    num_decoder: 6
+    dim_feedforward: 2048
+    max_seq: 1024
+    pos_dropout: 0.1
+    trans_dropout: 0.1
+
+optimizer:
+    max_lr: 0.0002
+    pct_start: 0.1
+
+dataloader:
+    num_workers: 2
+    pin_memory: True
+
+aug:
+    image_aug: True
+    masked_language_model: True
+
+backbone: vgg19
+cnn_args:
+    pretrained: False
+    ss: [[2, 2],
+         [2, 2],
+         [2, 1],
+         [2, 1],
+         [1, 1]]
+    ks: [[2, 2],
+         [2, 2],
+         [2, 1],
+         [2, 1],
+         [1, 1]]
+    hidden: 256
+
+save_file:
+    excel: result.xlsx
+    text: wrong_case.txt
