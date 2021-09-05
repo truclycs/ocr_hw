@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     begin = time.time()
     text, char_probs = detector(image)
-    print(f"Inference time: {time.time() - begin:.4f}")
+    print(f"TIME: {time.time() - begin:.4f}")
     print("TEXT:", text)
     for i, c in enumerate(text):
         print(f'{c}: {char_probs[i]:.4f}')

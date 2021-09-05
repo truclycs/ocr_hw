@@ -1,0 +1,5 @@
+0000_tests.png	Số 10, đường Lý Văn Lâm, Phường 1, Thành Phố Cà Mau, Cà Mau
+0001_tests.png	271 Huỳnh Ngọc Huệ, Phường Hoà Khê, Quận Thanh Khê, Đà Nẵng
+0002_tests.png	Số 35/70B, KP 9, Phường Hố Nai, Thành Phố Biên Hoà, Đồng Nai
+0003_tests.png	Số 187, tổ 8, ấp Tân Hòa, Xã Tân Tiến, Huyện Bù Đốp, Bình Phước
+0004_tests.png	Số 47, tổ 2D, khu 1, Phường Gia Cẩm, Thành phố Việt Trì, Phú Thọ

@@ -1,0 +1,5 @@
+0000_samples.png	Số 253 đường Trần Phú, Thị trấn Nam Sách, Huyện Nam Sách, Hải Dương
+0001_samples.png	Số 289 Đinh Bộ Lĩnh, Phường 26, Quận Bình Thạnh, TP Hồ Chí Minh
+0002_samples.png	Số 246E/2, Khu phố 1B, Phường An Phú, Tx Thuận An, Bình Dương
+0003_samples.png	42 Đặng Thị Nhu, Phường Nguyễn Thái Bình, Quận 1, TP Hồ Chí Minh
+0004_samples.png	200 Phan Bội Châu, Phường Trường An, Thành phố Huế, Thừa Thiên - Huế
