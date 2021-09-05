@@ -1,9 +1,10 @@
-from imgaug import augmenters as iaa
 import argparse
 import imgaug as ia
 import numpy as np
 import os
 import torch
+from datetime import datetime
+from imgaug import augmenters as iaa
 from PIL import Image
 from torch.nn.functional import softmax
 from torch.optim import AdamW
@@ -90,14 +91,13 @@ class Trainer():
         self.batch_size = config['trainer']['batch_size']
         self.display_cycle = config['trainer']['display_cycle']
         self.valid_cycle = config['trainer']['valid_cycle']
-        self.weight_dir_weights = config['trainer']['weight_dir']
-        self.save_checkpoint = config['trainer']['checkpoint']
+
+        cur_time = datetime.now().strftime('%y%m%d%H%M')
+        self.weight_dir = config['trainer']['weight_dir'] + cur_time + '/'
+        self.save_checkpoint = self.weight_dir + 'checkpoint.pth'
+        self.logger = Logger(self.weight_dir + 'logger.log')
 
         self.model = OCR(len(self.vocab), self.backbone, self.cnn, self.transformer, self.seq_model).to(self.device)
-
-        logger = config['trainer']['log_dir']
-        if logger:
-            self.logger = Logger(logger)
 
         if pretrained:
             weight_file = config['weights']
@@ -142,37 +142,26 @@ class Trainer():
                 val_loss = self.validate()
                 acc_full_seq, acc_per_char, cer, wer = self.precision(len(self.valid_annotation))
 
-                info = 'i: {:06d} - valid loss: {:.3f} - acc: {:.4f} - apc: {:.3f} - cer {:.3f} - wer {:.3f}'.format(
-                        i,
-                        val_loss,
-                        acc_full_seq,
-                        acc_per_char,
-                        cer,
-                        wer)
-
+                info = 'i: {:06d} - valid loss: {:.3f} - acc: {:.4f} - apc: {:.3f} - cer {:.3f} - wer {:.3f}'.format(i, val_loss, acc_full_seq, acc_per_char, cer, wer)
                 print(info)
                 self.logger.log(info)
 
                 if acc_full_seq > best_acc:
-                    self.save_weights(self.weight_dir_weights)
+                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + ".pth")
                     best_acc = acc_full_seq
 
-                self.save_weights(self.save_checkpoint + "_" + str(i) + ".pth")
-
                 self.visualize_prediction()
+
+            self.save_weights(self.save_checkpoint)
 
     def step(self, batch):
         self.model.train()
 
         batch = self.batch_to_device(batch)
-        image = batch['image']
-        tgt_input = batch['tgt_input']
-        tgt_output = batch['tgt_output']
-        tgt_padding_mask = batch['tgt_padding_mask']
 
-        outputs = self.model(image, tgt_input, tgt_key_padding_mask=tgt_padding_mask)
+        outputs = self.model(batch['image'], batch['tgt_input'], tgt_key_padding_mask=batch['tgt_padding_mask'])
         outputs = outputs.view(-1, outputs.size(2))
-        tgt_output = tgt_output.view(-1)
+        tgt_output = batch['tgt_output'].view(-1)
 
         loss = self.criterion(outputs, tgt_output)
         self.optimizer.zero_grad()
@@ -191,19 +180,18 @@ class Trainer():
         with torch.no_grad():
             for batch in self.valid_gen:
                 batch = self.batch_to_device(batch)
-                image = batch['image']
-                tgt_input = batch['tgt_input']
-                tgt_output = batch['tgt_output']
-                tgt_padding_mask = batch['tgt_padding_mask']
 
-                outputs = self.model(image, tgt_input, tgt_padding_mask)
+                outputs = self.model(batch['image'], batch['tgt_input'], batch['tgt_padding_mask'])
                 outputs = outputs.flatten(0, 1)
-                tgt_output = tgt_output.flatten()
+
+                tgt_output = batch['tgt_output'].flatten()
+
                 loss = self.criterion(outputs, tgt_output)
 
                 total_loss.append(loss.item())
 
         self.model.train()
+
         return np.mean(total_loss)
 
     def predict(self, sample=None):
@@ -252,17 +240,21 @@ class Trainer():
 
         return translated_sentence, char_probs
 
-    def precision(self, sample=None, indistinguish=False):
+    def precision(self, sample=None):
         predicts, targets, _, _ = self.predict(sample=sample)
-        acc_full_seq = compute_accuracy(predicts, targets, indistinguish=indistinguish, mode='full_seq')
-        acc_per_char = compute_accuracy(predicts, targets, indistinguish=indistinguish, mode='per_char')
-        cer_distances, num_chars = compute_cer(predicts, targets, indistinguish=indistinguish)
-        wer_distances, num_words = compute_wer(predicts, targets, indistinguish=indistinguish)
+
+        acc_full_seq = compute_accuracy(predicts, targets, mode='full_string')
+        acc_per_char = compute_accuracy(predicts, targets, mode='per_char')
+
+        cer_distances, num_chars = compute_cer(predicts, targets)
+        wer_distances, num_words = compute_wer(predicts, targets)
 
         cer_distances = torch.sum(cer_distances).float()
         num_chars = torch.sum(num_chars)
+
         wer_distances = torch.sum(wer_distances).float()
         num_words = torch.sum(num_words)
+
         cer = cer_distances / num_chars.item()
         wer = wer_distances / num_words.item()
 
@@ -304,15 +296,10 @@ class Trainer():
         torch.save(self.model.state_dict(), filename)
 
     def batch_to_device(self, batch):
-        image = batch['image'].to(self.device, non_blocking=True)
-        tgt_input = batch['tgt_input'].to(self.device, non_blocking=True)
-        tgt_output = batch['tgt_output'].to(self.device, non_blocking=True)
-        tgt_padding_mask = batch['tgt_padding_mask'].to(self.device, non_blocking=True)
-
-        return {'image': image,
-                'tgt_input': tgt_input,
-                'tgt_output': tgt_output,
-                'tgt_padding_mask': tgt_padding_mask,
+        return {'image': batch['image'].to(self.device, non_blocking=True),
+                'tgt_input': batch['tgt_input'].to(self.device, non_blocking=True),
+                'tgt_output': batch['tgt_output'].to(self.device, non_blocking=True),
+                'tgt_padding_mask': batch['tgt_padding_mask'].to(self.device, non_blocking=True),
                 'filenames': batch['filenames']}
 
     def data_gen(self, lmdb_path, data_root, annotation, masked_language_model=True, transform=None):

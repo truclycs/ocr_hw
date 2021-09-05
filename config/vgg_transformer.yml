@@ -8,9 +8,7 @@ trainer:
     display_cycle: 50  
     valid_cycle: 1000
     iters: 50000
-    weight_dir: models/weights/zzz.pth
-    checkpoint: models/weights/checkpoints/zzz
-    log_dir: models/weights/log/zzz.log
+    weight_dir: models/weights/transformer/
 
 dataset:    
     name: 'all'
