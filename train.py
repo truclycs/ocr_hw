@@ -133,7 +133,7 @@ class Trainer():
 
             if i % self.display_cycle == 0:
                 cur_loss = total_loss / self.display_cycle
-                info = 'it: {:06d} -loss: {:.3f} -lr: {:.2e}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
+                info = 'iter: {:06d} - loss: {:.4f} - lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
                 print(info)
                 self.logger.log(info)
                 total_loss = 0

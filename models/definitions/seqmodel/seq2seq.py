@@ -61,8 +61,7 @@ class Decoder(nn.Module):
 
 
 class Seq2Seq(nn.Module):
-    def __init__(self, vocab_size, encoder_hidden, decoder_hidden,
-                 image_channel, decoder_embedded, dropout=0.1):
+    def __init__(self, vocab_size, encoder_hidden, decoder_hidden, image_channel, decoder_embedded, dropout=0.1):
         super().__init__()
         attn = Attention(encoder_hidden, decoder_hidden)
         self.encoder = Encoder(image_channel, encoder_hidden, decoder_hidden, dropout)
@@ -73,9 +72,8 @@ class Seq2Seq(nn.Module):
         return (hidden, encoder_outputs)
 
     def forward_decoder(self, tgt, memory):
-        tgt = tgt[-1]
         hidden, encoder_outputs = memory
-        output, hidden, _ = self.decoder(tgt, hidden, encoder_outputs)
+        output, hidden, _ = self.decoder(tgt[-1], hidden, encoder_outputs)
         output = output.unsqueeze(1)
         return output, (hidden, encoder_outputs)
 
