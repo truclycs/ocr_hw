@@ -9,6 +9,7 @@ def compute_cer(predicts: List[List[str]], targets: List[List[str]]) -> float:
 
     distances = torch.tensor([ed.distance(predict, target) for predict, target in zip(predicts, targets)])
     num_references = torch.tensor(list(map(len, targets)))
+
     cer = torch.sum(distances).float() / torch.sum(num_references).item()
 
     return cer
