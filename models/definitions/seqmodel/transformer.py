@@ -1,10 +1,11 @@
-import numpy as np
 import torch
+import numpy as np
 from torch import nn
 
 
 class Transformer(nn.Module):
-    def __init__(self, vocab_size, d_model, nhead, num_encoder, num_decoder, dim_feedforward, max_seq, pos_dropout, trans_dropout):
+    def __init__(self, vocab_size, d_model, nhead, num_encoder, num_decoder,
+                 dim_feedforward, max_seq, pos_dropout, trans_dropout):
         super(Transformer, self).__init__()
         self.d_model = d_model
         self.embed_tgt = nn.Embedding(vocab_size, d_model)

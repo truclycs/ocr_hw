@@ -1,7 +1,7 @@
-from models.definitions.cnn import CNN
-from models.definitions.seqmodel.transformer import Transformer
-from models.definitions.seqmodel.seq2seq import Seq2Seq
 from torch import nn
+from models.definitions.cnn import CNN
+from models.definitions.seqmodel.seq2seq import Seq2Seq
+from models.definitions.seqmodel.transformer import Transformer
 
 
 class OCR(nn.Module):
