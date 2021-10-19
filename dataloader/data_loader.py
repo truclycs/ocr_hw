@@ -93,7 +93,7 @@ class OCRDataset(Dataset):
         dim_image = self.txn.get(key.encode())
         dim_image = np.fromstring(dim_image, dtype=np.int32)
         imageH, imageW = dim_image
-        new_w = resize(imageW, imageH, self.expected_height, self.image_min_width, self.image_max_width)
+        new_w, _ = resize(imageW, imageH, self.expected_height, self.image_min_width, self.image_max_width)
         return new_w
 
     def read_buffer(self, idx):
