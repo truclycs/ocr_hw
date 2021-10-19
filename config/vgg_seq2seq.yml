@@ -1,7 +1,7 @@
 vocab_size: 233
 vocab: models/definitions/vocab.yml
 device: 'cpu'
-weights: models/weights/seq2seq/vgg_seq2seq_253.pth
+weights: models/weights/seq2seq/s2s.pth
 
 trainer:
     batch_size: 8
@@ -18,8 +18,8 @@ dataset:
     valid_annotation: ./dataset/annotation/all/val.txt
     test_annotation: ./dataset/annotation/all/test.txt
     expected_height: 64
-    image_min_width: 32
-    image_max_width: 1024
+    image_min_width: 64
+    image_max_width: 2048
 
 seq_modeling: seq2seq
 transformer:
@@ -30,11 +30,11 @@ transformer:
     dropout: 0.1
 
 optimizer:
-    max_lr: 0.0002
+    max_lr: 0.0003
     pct_start: 0.1
 
 dataloader:
-    num_workers: 2
+    num_workers: 4
     pin_memory: True
 
 aug:
@@ -57,5 +57,5 @@ cnn_args:
     hidden: 256
 
 save_file:
-    excel: result_test.xlsx
-    text: wrong_case_test.txt
+    excel: result.xlsx
+    text: wrong_case.txt
