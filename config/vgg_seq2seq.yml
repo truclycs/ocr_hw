@@ -6,7 +6,7 @@ weights: models/weights/seq2seq/vgg_seq2seq_253.pth
 trainer:
     batch_size: 8
     display_cycle: 50  
-    valid_cycle: 1000s
+    valid_cycle: 1000
     iters: 50000
     weight_dir: models/weights/seq2seq/
     log_dir: models/weights/log/seq2seq/
