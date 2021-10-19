@@ -1,16 +1,20 @@
+import os
+import sys
+import six
 import cv2
 import lmdb
-import numpy as np
-import os
-import random
-import six
-import sys
 import torch
-from collections import defaultdict
+import random
+import numpy as np
+from tqdm import tqdm
 from PIL import Image
+from PIL import ImageFile
+from collections import defaultdict
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
-from tqdm import tqdm
+
+from utils import process_image, resize
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def write_cache(env, cache):
@@ -53,7 +57,7 @@ def create_dataset(output_path, root_dir, annotation_path):
 
 class OCRDataset(Dataset):
     def __init__(self, lmdb_path, root_dir, annotation_path, vocab,
-                 expected_height=64, image_min_width=32, image_max_width=2048, transform=None):
+                 expected_height=64, image_min_width=64, image_max_width=2048, transform=None):
         self.root_dir = root_dir
         self.vocab = vocab
         self.transform = transform
@@ -74,57 +78,49 @@ class OCRDataset(Dataset):
         self.build_cluster_indices()
 
     def build_cluster_indices(self):
+        self.cluster_indices = defaultdict(list)
+
         pbar = tqdm(range(self.__len__()),
                     desc='{} build cluster'.format(self.lmdb_path),
                     ncols=100, position=0, leave=True)
 
-        self.cluster_indices = defaultdict(list)
         for i in pbar:
-            self.cluster_indices[self.get_bucket(i)].append(i)
+            bucket = self.get_bucket(i)
+            self.cluster_indices[bucket].append(i)
 
     def get_bucket(self, idx):
         key = 'dim-%09d' % idx
         dim_image = self.txn.get(key.encode())
         dim_image = np.fromstring(dim_image, dtype=np.int32)
-        height, width = dim_image
-        new_width = self._resize(width, height)
-        return new_width
+        imageH, imageW = dim_image
+        new_w = resize(imageW, imageH, self.expected_height, self.image_min_width, self.image_max_width)
+        return new_w
 
     def read_buffer(self, idx):
         image_file = 'image-%09d' % idx
         label_file = 'label-%09d' % idx
         path_file = 'path-%09d' % idx
+        image_buf = self.txn.get(image_file.encode())
         label = self.txn.get(label_file.encode()).decode()
         image_path = self.txn.get(path_file.encode()).decode()
         buf = six.BytesIO()
-        buf.write(self.txn.get(image_file.encode()))
+        buf.write(image_buf)
         buf.seek(0)
         return buf, label, image_path
 
     def read_data(self, idx):
         buf, label, image_path = self.read_buffer(idx)
-
         image = Image.open(buf).convert('RGB')
         if self.transform:
             image = self.transform(image)
-
-        image = image.convert('RGB')
-        width, height = image.size
-        image = image.resize((self._resize(width, height), self.expected_height), Image.ANTIALIAS)
-        image = np.asarray(image).transpose(2, 0, 1)
-        image = image / 255
-
-        return image, self.vocab.encode(label), image_path
-
-    def _resize(self, width, height):
-        new_width = self.expected_height * width // height
-        new_width = np.ceil(new_width / 10) * 10
-        new_width = np.clip(width, a_min=self.image_min_width, a_max=self.image_max_width)
-        return new_width
+        image_bw = process_image(image, self.expected_height, self.image_min_width, self.image_max_width)
+        word = self.vocab.encode(label)
+        return image_bw, word, image_path
 
     def __getitem__(self, idx):
         image, word, image_path = self.read_data(idx)
-        return {'image': image, 'word': word, 'image_path': os.path.join(self.root_dir, image_path)}
+        image_path = os.path.join(self.root_dir, image_path)
+        return {'image': image, 'word': word, 'image_path': image_path}
 
     def __len__(self):
         return self.n_samples

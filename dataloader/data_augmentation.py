@@ -1,7 +1,7 @@
-import imgaug as ia
 import numpy as np
-from imgaug import augmenters as iaa
+import imgaug as ia
 from PIL import Image
+from imgaug import augmenters as iaa
 
 
 class ImageAugTransform:
