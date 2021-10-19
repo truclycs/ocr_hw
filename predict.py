@@ -1,14 +1,14 @@
-import argparse
 import cv2
-import numpy as np
 import time
 import torch
+import argparse
+import numpy as np
 from torch import nn
 from typing import Dict, Tuple
 
+from utils import abs_path, load_yaml
 from models.definitions.ocr import OCR
 from models.definitions.vocab import Vocab
-from utils import abs_path, load_yaml
 
 
 class Predictor:

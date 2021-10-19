@@ -1,14 +1,14 @@
+import torch
 import argparse
 import pandas as pd
-import torch
 from collections import defaultdict
 from torch.utils.data import DataLoader
 
-from dataloader.data_loader import OCRDataset, ClusterRandomSampler, Collator
-from metrics.metrics import compute_accuracy, compute_cer, compute_wer
 from utils import load_yaml
 from models.definitions.ocr import OCR
 from models.definitions.vocab import Vocab
+from metrics.metrics import compute_accuracy, compute_cer, compute_wer
+from dataloader.data_loader import OCRDataset, ClusterRandomSampler, Collator
 
 
 class Test():
