@@ -1,7 +1,7 @@
 vocab_size: 233
 vocab: models/definitions/vocab.yml
-device: 'cpu'
-weights: models/weights/transformer/transformer.pth
+device: 'cuda'
+weights: models/weights/transformer/base_transformer.pth
 
 trainer:
     batch_size: 8
@@ -11,11 +11,11 @@ trainer:
     weight_dir: models/weights/transformer/
 
 dataset:    
-    name: 'all'
+    name: 'vtp'
     data_root: ./dataset/images/
-    train_annotation: ./dataset/annotation/all/train.txt
-    valid_annotation: ./dataset/annotation/all/val.txt
-    test_annotation: ./dataset/annotation/all/test.txt
+    train_annotation: ./dataset/annotation/vtp/train.txt
+    valid_annotation: ./dataset/annotation/vtp/val.txt
+    test_annotation: ./dataset/annotation/vtp/test.txt
     expected_height: 64
     image_min_width: 64
     image_max_width: 2048
@@ -59,5 +59,5 @@ cnn_args:
     hidden: 256
 
 save_file:
-    excel: result.xlsx
-    text: wrong_case.txt
+    excel: result_transformer.xlsx
+    text: wrong_case_transformer.txt
