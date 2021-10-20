@@ -56,31 +56,30 @@ def eval_config(config):
     return config
 
 
-def resize(w, h, expected_height, image_min_width, image_max_width):
-    new_w = int(expected_height * w / h)
-    new_w = np.ceil(new_w / 10) * 10
-    new_w = np.clip(new_w, image_min_width, image_max_width)
-    return int(new_w), expected_height
+def resize(width, height, expected_height: int = 64, image_min_width: int = 64, image_max_width: int = 2048):
+    new_width = expected_height * width // height
+    new_width = np.ceil(new_width/10) * 10
+    new_width = np.clip(new_width, image_min_width, image_max_width)
+    return int(new_width), expected_height
 
 
-def process_image(image, image_height, image_min_width, image_max_width):
+def process_image(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 2048):
     image = image.convert('RGB')
-    w, h = image.size
-    new_w, image_height = resize(w, h, image_height, image_min_width, image_max_width)
-    image = image.resize((new_w, image_height), Image.ANTIALIAS)
+    width, height = image.size
+    new_width, image_height = resize(width, height, image_height, image_min_width, image_max_width)
+    image = image.resize((new_width, image_height), Image.ANTIALIAS)
     image = np.asarray(image).transpose(2, 0, 1)
     return image / 255
 
 
-def process_input(image, image_height, image_min_width, image_max_width):
+def process_input(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 2048):
     image = process_image(image, image_height, image_min_width, image_max_width)
-    image = image[np.newaxis, ...]  # add more 1 axis
+    image = image[np.newaxis, ...]
     image = torch.FloatTensor(image)
     return image
 
 
-def translate(image, model, max_seq_length=128, sos_token=1, eos_token=2):
-    "data: BxCxHxW"
+def translate(image, model, max_seq_length: int = 256, sos_token: int = 1, eos_token: int = 2):
     model.eval()
 
     with torch.no_grad():
