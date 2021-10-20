@@ -79,17 +79,17 @@ def process_input(image, image_height: int = 64, image_min_width: int = 64, imag
     return image
 
 
-def translate(image, model, max_seq_length: int = 256, sos_token: int = 1, eos_token: int = 2):
+def translate(images, model, max_seq_length: int = 256, sos_token: int = 1, eos_token: int = 2):
     model.eval()
 
     with torch.no_grad():
-        memory = model.transformer.forward_encoder(model.cnn(image))
-        translated_sentence = [[sos_token] * len(image)]
-        char_probs = [[1] * len(image)]
+        memory = model.transformer.forward_encoder(model.cnn(images))
+        translated_sentence = [[sos_token] * len(images)]
+        char_probs = [[1] * len(images)]
 
         max_length = 0
         while max_length <= max_seq_length and not all(np.any(np.asarray(translated_sentence).T == eos_token, axis=1)):
-            tgt_inp = torch.LongTensor(translated_sentence).to(image.device)
+            tgt_inp = torch.LongTensor(translated_sentence).to(images.device)
             output, memory = model.transformer.forward_decoder(tgt_inp, memory)
             output = softmax(output, dim=-1)
             output = output.to('cpu')
