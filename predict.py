@@ -5,17 +5,18 @@ import argparse
 import numpy as np
 from torch import nn
 from typing import Dict, Tuple
+from collections import defaultdict
 
-from utils import abs_path, load_yaml
+from utils import abs_path, load_yaml, translate, process_input
 from models.definitions.ocr import OCR
 from models.definitions.vocab import Vocab
 
 
 class Predictor:
-    def __init__(self, config: Dict, image_height: int = 64, image_min_width: int = 32, image_max_width: int = 1024,
+    def __init__(self, config: Dict, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 1024,
                  max_seq: int = 128, sos_token: int = 1, eos_token: int = 2, device: str = 'cpu') -> None:
         super(Predictor, self).__init__()
-        self.device = device
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.image_height = image_height
         self.image_min_width = image_min_width
@@ -31,7 +32,7 @@ class Predictor:
                          config['backbone'],
                          config['cnn_args'],
                          config['transformer'],
-                         config['seq_modeling']).to(config['device'])
+                         config['seq_modeling']).to(self.device)
         state_dict = torch.load(f=abs_path(config['weights']), map_location=device)
         self.model.load_state_dict(state_dict=state_dict)
         self.model.eval().to(device)
@@ -82,6 +83,37 @@ class Predictor:
 
         return text, char_probs[0][1:-1]
 
+    def predict_batch(self, images):
+        bucket = defaultdict(list)
+        bucket_idx = defaultdict(list)
+        bucket_pred = {}
+        string_predicts = [0]*len(images)
+        probs = [0]*len(images)
+
+        for i, image in enumerate(images):
+            image = process_input(image, self.image_height, self.image_min_width, self.image_max_width)
+            bucket[image.shape[-1]].append(image)
+            bucket_idx[image.shape[-1]].append(i)
+
+        for k, batch in bucket.items():
+            batch = torch.cat(batch, 0).to(self.device)
+            s, prob = translate(batch, self.model)
+            prob = prob.tolist()
+
+            s = s.tolist()
+            s = self.vocab.batch_decode(s)
+
+            bucket_pred[k] = (s, prob)
+
+        for k in bucket_pred:
+            idx = bucket_idx[k]
+            sent, prob = bucket_pred[k]
+            for i, j in enumerate(idx):
+                string_predicts[j] = sent[i]
+                probs[j] = prob[i]
+
+        return string_predicts, probs
+
     def __call__(self, image):
         image, = self.preprocess(image=image)
         image, memory = self.process(image)
@@ -92,7 +124,7 @@ class Predictor:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', default='test/images/test.png')
-    parser.add_argument('--config', default='config/vgg_transformer.yml')
+    parser.add_argument('--config', default='config/vgg_seq2seq.yml')
     args = parser.parse_args()
 
     config = load_yaml(args.config)
