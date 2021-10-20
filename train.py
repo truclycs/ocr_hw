@@ -5,10 +5,9 @@ import numpy as np
 from datetime import datetime
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
-from torch.nn.functional import softmax
 from torch.optim.lr_scheduler import OneCycleLR
 
-from utils import load_yaml
+from utils import load_yaml, translate
 from models.definitions.ocr import OCR
 from models.definitions.vocab import Vocab
 from metrics.metrics import compute_metrics
@@ -83,7 +82,8 @@ class Trainer():
                                        self.valid_annotation, masked_language_model=False)
 
     def train(self):
-        total_loss = best_acc = 0
+        total_loss = 0
+        best_acc = 0
         data_iter = iter(self.train_gen)
 
         for i in range(1, self.num_iters + 1):
@@ -98,7 +98,7 @@ class Trainer():
 
             if i % self.display_cycle == 0:
                 cur_loss = total_loss / self.display_cycle
-                info = 'iter: {:06d} - loss: {:.4f} - lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
+                info = 'i: {:06d} -loss: {:.4f} -lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
                 print(info)
                 self.logger.log(info)
                 total_loss = 0
@@ -107,7 +107,7 @@ class Trainer():
                 val_loss = self.validate()
                 cer, wer, aoc, acc = self.precision(len(self.valid_annotation))
 
-                info = 'i: {:06d} - valid loss: {:.3f} - acc: {:.4f} - apc: {:.4f} - cer {:.4f} - wer {:.4f}'.format(i, val_loss, acc, aoc, cer, wer)
+                info = f'i {i:06d} -loss {val_loss:.4f} -acc {acc:.4f} -aoc {aoc:.4f} -wer {wer:.4f} -cer {cer:.4f}'
                 print(info)
                 self.logger.log(info)
 
@@ -122,9 +122,7 @@ class Trainer():
     def step(self, batch):
         self.model.train()
         batch = self.batch_to_device(batch)
-        outputs = self.model(batch['image'],
-                             batch['tgt_input'],
-                             tgt_key_padding_mask=batch['tgt_padding_mask'])
+        outputs = self.model(batch['image'], batch['tgt_input'], tgt_key_padding_mask=batch['tgt_padding_mask'])
         outputs = outputs.view(-1, outputs.size(2))
         tgt_output = batch['tgt_output'].view(-1)
         loss = self.criterion(outputs, tgt_output)
@@ -141,9 +139,7 @@ class Trainer():
         with torch.no_grad():
             for batch in self.valid_gen:
                 batch = self.batch_to_device(batch)
-                outputs = self.model(batch['image'],
-                                     batch['tgt_input'],
-                                     batch['tgt_padding_mask'])
+                outputs = self.model(batch['image'], batch['tgt_input'], tgt_key_padding_mask=batch['tgt_padding_mask'])
                 outputs = outputs.flatten(0, 1)
                 tgt_output = batch['tgt_output'].flatten()
                 loss = self.criterion(outputs, tgt_output)
@@ -158,7 +154,7 @@ class Trainer():
         probs = []
         for batch in self.valid_gen:
             batch = self.batch_to_device(batch)
-            translated_sentence, prob = self.translate(batch['image'], self.model, max_seq_length=256)
+            translated_sentence, prob = translate(batch['image'], self.model, max_seq_length=256)
             pred_sent = self.vocab.batch_decode(translated_sentence.tolist())
             actual_sent = self.vocab.batch_decode(batch['tgt_output'].tolist())
             image_files.extend(batch['filenames'])
@@ -169,43 +165,18 @@ class Trainer():
                 break
         return pred_sents, actual_sents, image_files, probs
 
-    def translate(self, image, model, max_seq_length=256, sos_token=1, eos_token=2):
-        model.eval()
-        with torch.no_grad():
-            memory = model.transformer.forward_encoder(model.cnn(image))
-            translated_sentence = [[sos_token] * len(image)]
-            char_probs = [[1] * len(image)]
-
-            max_length = 0
-            while max_length <= max_seq_length and not all(np.any(np.asarray(translated_sentence).T == eos_token, axis=1)):
-                tgt_inp = torch.LongTensor(translated_sentence).to(image.device)
-                output, memory = model.transformer.forward_decoder(tgt_inp, memory)
-                output = softmax(output, dim=-1)
-                output = output.to('cpu')
-                values, indices = torch.topk(output, 5)
-                indices = list(indices[:, -1, 0])
-                values = list(values[:, -1, 0])
-                char_probs.append(values)
-                translated_sentence.append(indices)
-                max_length += 1
-
-            translated_sentence = np.asarray(translated_sentence).T
-            char_probs = np.asarray(char_probs).T
-            char_probs = np.multiply(char_probs, translated_sentence > 3)
-
-        return translated_sentence, char_probs
-
     def precision(self, sample=None):
         predicts, targets, _, _ = self.predict(sample=sample)
         return compute_metrics(predicts, targets)
 
-    def visualize_prediction(self, sample=16):
+    def visualize_prediction(self, sample=10):
         pred_sents, actual_sents, image_files, probs = self.predict(sample)
         for vis_idx in range(0, min(len(image_files), sample)):
             pred_sent = pred_sents[vis_idx]
             actual_sent = actual_sents[vis_idx]
             print("Actuals: ", actual_sent)
-            print("Predict: ", pred_sent, end='\n')
+            print("Predict: ", pred_sent)
+            print()
 
     def load_weight(self, filename):
         state_dict = torch.load(filename, map_location=torch.device(self.device))
@@ -213,7 +184,7 @@ class Trainer():
             if name not in state_dict:
                 print('{} not found'.format(name))
             elif state_dict[name].shape != param.shape:
-                print('{} missmatching shape, required {} but found {}'.format(name, param.shape, state_dict[name].shape))
+                print('{} missmatch shape, required {} but found {}'.format(name, param.shape, state_dict[name].shape))
                 del state_dict[name]
         self.model.load_state_dict(state_dict, strict=False)
 
