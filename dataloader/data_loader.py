@@ -27,7 +27,8 @@ def create_dataset(output_path, root_dir, annotation_path):
     with open(annotation_path, 'r') as f:
         annotations = [line.strip().split('\t') for line in f.readlines()]
 
-    cache, count = {}, 0
+    cache = {}
+    count = 0
     env = lmdb.open(output_path, map_size=1099511627776)
     pbar = tqdm(range(len(annotations)), ncols=100, desc='Create {}'.format(output_path))
 
@@ -56,8 +57,8 @@ def create_dataset(output_path, root_dir, annotation_path):
 
 
 class OCRDataset(Dataset):
-    def __init__(self, lmdb_path, root_dir, annotation_path, vocab,
-                 expected_height=64, image_min_width=64, image_max_width=2048, transform=None):
+    def __init__(self, lmdb_path, root_dir, annotation_path, vocab, expected_height: int = 64,
+                 image_min_width: int = 64, image_max_width: int = 2048, transform=None):
         self.root_dir = root_dir
         self.vocab = vocab
         self.transform = transform
@@ -79,9 +80,7 @@ class OCRDataset(Dataset):
 
     def build_cluster_indices(self):
         self.cluster_indices = defaultdict(list)
-
-        pbar = tqdm(range(self.__len__()),
-                    desc='{} build cluster'.format(self.lmdb_path),
+        pbar = tqdm(range(self.__len__()), desc='{} build cluster'.format(self.lmdb_path),
                     ncols=100, position=0, leave=True)
 
         for i in pbar:
@@ -92,9 +91,10 @@ class OCRDataset(Dataset):
         key = 'dim-%09d' % idx
         dim_image = self.txn.get(key.encode())
         dim_image = np.fromstring(dim_image, dtype=np.int32)
-        imageH, imageW = dim_image
-        new_w, _ = resize(imageW, imageH, self.expected_height, self.image_min_width, self.image_max_width)
-        return new_w
+        image_height, image_width = dim_image
+        new_width, _ = resize(image_width, image_height, self.expected_height,
+                              self.image_min_width, self.image_max_width)
+        return new_width
 
     def read_buffer(self, idx):
         image_file = 'image-%09d' % idx
