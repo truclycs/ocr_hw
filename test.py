@@ -1,13 +1,14 @@
+import time
 import torch
 import argparse
 import pandas as pd
 from collections import defaultdict
 from torch.utils.data import DataLoader
 
-from utils import load_yaml
 from models.definitions.ocr import OCR
 from models.definitions.vocab import Vocab
-from metrics.metrics import compute_accuracy, compute_cer, compute_wer
+from metrics.metrics import compute_metrics
+from utils import load_yaml, translate, abs_path
 from dataloader.data_loader import OCRDataset, ClusterRandomSampler, Collator
 
 
@@ -18,24 +19,28 @@ class Test():
         self.batch_size = 1
         self.result_excel_file = config['save_file']['excel']
         self.result_text_file = config['save_file']['text']
-        self.load_weights(config['weights'])
-        self.backbone = config['backbone']
-        self.cnn = config['cnn_args']
-        self.transformer = config['transformer']
-        self.seq_model = config['seq_modeling']
-        self.device = config['device']
-        self.vocab = Vocab(config['vocab'])
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        self.dataset_name = config['dataset']['name']
-        self.data_root = config['dataset']['data_root']
-        self.test_annotation = config['dataset']['test_annotation']
         self.expected_height = config['dataset']['expected_height']
         self.image_min_width = config['dataset']['image_min_width']
         self.image_max_width = config['dataset']['image_max_width']
         self.data_loader = config['dataloader']
 
-        self.model = OCR(len(self.vocab), self.backbone, self.cnn, self.transformer, self.seq_model).to(self.device)
-        self.test_gen = self.data_gen('dataset/test_{}'.format(self.dataset_name), self.data_root, self.test_annotation, masked_language_model=False)
+        self.vocab = Vocab(config['vocab'])
+
+        self.model = OCR(config['vocab_size'],
+                         config['backbone'],
+                         config['cnn_args'],
+                         config['transformer'],
+                         config['seq_modeling']).to(self.device)
+        state_dict = torch.load(f=abs_path(config['weights']), map_location=self.device)
+        self.model.load_state_dict(state_dict=state_dict)
+        self.model.eval().to(self.device)
+
+        self.test_gen = self.data_gen('dataset/test_{}'.format(config['dataset']['name']),
+                                      config['dataset']['data_root'],
+                                      config['dataset']['test_annotation'],
+                                      masked_language_model=False)
 
     def predict(self, sample=None):
         predicts = []
@@ -45,17 +50,17 @@ class Test():
         for batch in self.test_gen:
             batch = self.batch_to_device(batch)
             translated_sentence, prob = translate(batch['image'], self.model, max_seq_length=256)
-            predict_s = self.vocab.batch_decode(translated_sentence.tolist())
+            predict = self.vocab.batch_decode(translated_sentence.tolist())
             target = self.vocab.batch_decode(batch['tgt_output'].tolist())
             image_files.extend(batch['filenames'])
-            predicts.extend(predict_s)
+            predicts.extend(predict)
             targets.extend(target)
 
             case += 1
-            print(case)
-            print(batch['filenames'])
+            print(case, batch['filenames'])
             print(target)
-            print(predict_s, end='\n')
+            print(predict)
+            print()
 
             if sample is not None and len(predicts) > sample:
                 break
@@ -65,33 +70,7 @@ class Test():
     def precision(self, sample=None):
         predicts, targets, image_files = self.predict(sample=sample)
         test.save_predicted_result(targets, predicts, image_files)
-
-        acc_full_seq = compute_accuracy(predicts, targets, mode='full_string', image_files=image_files, file_save=self.result_text_file)
-        acc_per_char = compute_accuracy(predicts, targets, mode='per_char', image_files=image_files)
-
-        cer_distances, num_chars = compute_cer(predicts, targets, image_files=image_files)
-        wer_distances, num_words = compute_wer(predicts, targets, image_files=image_files)
-
-        cer_distances = torch.sum(cer_distances).float()
-        num_chars = torch.sum(num_chars)
-        wer_distances = torch.sum(wer_distances).float()
-        num_words = torch.sum(num_words)
-        cer = cer_distances / num_chars.item()
-        wer = wer_distances / num_words.item()
-
-        return acc_full_seq, acc_per_char, cer, wer
-
-    def load_weights(self, filename):
-        state_dict = torch.load(filename, map_location=torch.device(self.device))
-
-        for name, param in self.model.named_parameters():
-            if name not in state_dict:
-                print('{} not found'.format(name))
-            elif state_dict[name].shape != param.shape:
-                print('{} missmatching shape, required {} but found {}'.format(name, param.shape, state_dict[name].shape))
-                del state_dict[name]
-
-        self.model.load_state_dict(state_dict, strict=True)
+        return compute_metrics(predicts, targets, image_files, self.result_text_file)
 
     def batch_to_device(self, batch):
         image = batch['image'].to(self.device, non_blocking=True)
@@ -111,7 +90,7 @@ class Test():
         dataset = OCRDataset(lmdb_path=lmdb_path,
                              root_dir=data_root, annotation_path=annotation,
                              vocab=self.vocab, transform=transform,
-                             expected_height=self.config['dataset']['image_height'],
+                             expected_height=self.config['dataset']['expected_height'],
                              image_min_width=self.config['dataset']['image_min_width'],
                              image_max_width=self.config['dataset']['image_max_width'])
         sampler = ClusterRandomSampler(dataset, self.batch_size, False)
@@ -143,9 +122,11 @@ class Test():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='config/vgg-transformer.yml')
+    parser.add_argument('--config', default='config/vgg_seq2seq.yml')
     args = parser.parse_args()
     config = load_yaml(args.config)
+    start_time = time.time()
     test = Test(config)
-    acc_full_seq, acc_per_char, cer, wer = test.precision(len(test.test_gen))
-    print("acc: {:.4f} - acc per char: {:.4f} - cer {:.4f} - wer {:.4f}".format(acc_full_seq, acc_per_char, cer, wer))
+    cer, wer, aoc, acc = test.precision(len(test.test_gen))
+    end_time = time.time()
+    print(f"acc: {acc:.4f} -aoc: {aoc:.4f} -wer: {wer:.4f} -cer: {cer:.4f} -time: {(end_time-start_time) / len(test.test_gen):.4f}")
