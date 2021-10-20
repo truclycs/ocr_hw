@@ -35,22 +35,31 @@ def compute_wer(predicts: List[str], targets: List[str]) -> float:
     return wer
 
 
-def compute_accuracy(predicts: List[str], targets:  List[str]) -> float:
+def compute_accuracy(predicts: List[str], targets: List[str], image_files=None, file_save=None) -> float:
     assert type(predicts) == type(targets), 'predicts and targets must be the same type'
     assert len(predicts) == len(targets), 'predicts and targets must have the same length'
 
     correct_count = 0
-    for predict, target in zip(predicts, targets):
+    wrong_case = []
+    for predict, target, image_file in zip(predicts, targets, image_files):
         if predict == target:
             correct_count += 1
+        else:
+            wrong_case.append(str(image_file) + '\t' + str(target) + '\t' + str(predict) + '\n')
     acc = correct_count / len(targets)
+
+    if file_save:
+        with open(file_save, "a") as fw:
+            for x in wrong_case:
+                fw.write(x)
+            fw.write(str(acc))
 
     return acc
 
 
-def compute_metrics(predicts: List[str], targets: List[str]):
+def compute_metrics(predicts: List[str], targets: List[str], image_files=None, file_save=None):
     cer = compute_cer(predicts, targets)
     wer = compute_wer(predicts, targets)
     aoc = 1 - cer
-    acc = compute_accuracy(predicts, targets)
+    acc = compute_accuracy(predicts, targets, image_files, file_save)
     return cer, wer, aoc, acc
