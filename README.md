@@ -15,7 +15,7 @@ dataset/
     |
     ├── annotation/
     |       |
-    |       |──cin/
+    |       └──cin/
     |           |
     │           ├── train.txt
     |           ├── val.txt
