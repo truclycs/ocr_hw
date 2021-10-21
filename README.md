@@ -29,8 +29,8 @@ dataset/
 
 config/
     |
-	├── vgg_seq2seq.yml
-	└── vgg_transformer.yml
+    |── vgg_seq2seq.yml
+    └── vgg_transformer.yml
 ```
 
 ### 2.3 Download
