@@ -15,11 +15,11 @@ dataset/
     |
     ├── annotation/
     |       |
-    |       |cin/
-    |       |
-    │       ├── train.txt
-    |       ├── val.txt
-    │       └── test.txt
+    |       |──cin/
+    |           |
+    │           ├── train.txt
+    |           ├── val.txt
+    │           └── test.txt
     └── images/
             |
             ├── image1.jpg
