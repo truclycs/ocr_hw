@@ -28,7 +28,7 @@ dataset/
             └── imagen.jpg
 
 config/
-	|
+    |
 	├── vgg_seq2seq.yml
 	└── vgg_transformer.yml
 ```
