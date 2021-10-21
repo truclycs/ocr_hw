@@ -45,7 +45,7 @@ https://drive.google.com/drive/folders/1Qa2YA6w6V5MaNV-qxqhsHHoYFRK5JB39
 ## 4. Usage
 ### 4.1 Todo
 - [ ] Predicting with batch images.
-- [ ] Experience with other backbone (current: only VGG19).
+- [ ] Experience with other backbones (current: only VGG19).
 <!-- - [x] Applied for many dataset format included coco, pascal, labelme, altheia.
 - [x] Applied **imgaug** for augmenting data, dataloader with setting 'num_workers', 'pin_memory', 'drop_last' for optimizing training.
 - [x] Rearraged training and testing flow with Ignite Pytorch.
@@ -64,6 +64,12 @@ CUDA_VISIBLE_DEVICES=<cuda_indice> python train.py --config config/vgg_transform
 ```python
 CUDA_VISIBLE_DEVICES=<cuda_indice> python test.py --config config/vgg_transformer.yml
 ```
+
+* Predicting
+```python
+CUDA_VISIBLE_DEVICES=<cuda_indice> python predict.py --config config/vgg_transformer.yml --image <image_path>
+```
+
 
 ## 5. Performance
 <Updating>
