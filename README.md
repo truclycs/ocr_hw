@@ -39,6 +39,11 @@ config/
 https://drive.google.com/drive/folders/1Qa2YA6w6V5MaNV-qxqhsHHoYFRK5JB39
 ```
 
+* HANDS-VNOnDB: Vietnamese Online Handwriting Database
+```bash
+http://tc11.cvc.uab.es/datasets/HANDS-VNOnDB2018_1/
+```
+
 ## 3. Pretrained Weights
 
 
