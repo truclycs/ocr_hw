@@ -98,7 +98,7 @@ class Trainer():
 
             if i % self.display_cycle == 0:
                 cur_loss = total_loss / self.display_cycle
-                info = 'i: {:06d} -loss: {:.4f} -lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
+                info = '{:06d} -loss: {:.4f} -lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
                 print(info)
                 self.logger.log(info)
                 total_loss = 0
@@ -107,7 +107,7 @@ class Trainer():
                 val_loss = self.validate()
                 cer, wer, aoc, acc = self.precision(len(self.valid_annotation))
 
-                info = f'i {i:06d} -loss {val_loss:.4f} -acc {acc:.4f} -aoc {aoc:.4f} -wer {wer:.4f} -cer {cer:.4f}'
+                info = f'{i:06d} -loss {val_loss:.4f} -acc {acc:.4f} -aoc {aoc:.4f} -wer {wer:.4f} -cer {cer:.4f}'
                 print(info)
                 self.logger.log(info)
 
@@ -166,8 +166,8 @@ class Trainer():
         return pred_sents, actual_sents, image_files, probs
 
     def precision(self, sample=None):
-        predicts, targets, _, _ = self.predict(sample=sample)
-        return compute_metrics(predicts, targets)
+        predicts, targets, image_files, probs = self.predict(sample=sample)
+        return compute_metrics(predicts, targets, image_files)
 
     def visualize_prediction(self, sample=10):
         pred_sents, actual_sents, image_files, probs = self.predict(sample)
