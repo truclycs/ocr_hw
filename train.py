@@ -54,7 +54,7 @@ class Trainer():
 
         cur_time = datetime.now().strftime('%y%m%d%H%M')
         self.weight_dir = config['trainer']['weight_dir'] + cur_time + '/'
-        self.save_checkpoint = self.weight_dir + 'checkpoint.pth'
+        self.save_checkpoint = self.weight_dir + 'checkpoint_'
         self.logger = Logger(self.weight_dir + 'logger.log')
 
         self.model = OCR(config['vocab_size'],
@@ -97,15 +97,16 @@ class Trainer():
             total_loss += loss
 
             if i % self.display_cycle == 0:
+                self.save_weights(self.save_checkpoint + str(i) + '.pth')
                 cur_loss = total_loss / self.display_cycle
-                info = '{:06d} -loss: {:.4f} -lr: {:.5f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
+                info = '{:06d} - loss: {:.4f} - lr: {:4f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
                 print(info)
                 self.logger.log(info)
                 total_loss = 0
 
-            if self.valid_annotation and i % self.valid_cycle == 0:
+            if self.valid_gen and i % self.valid_cycle == 0:
                 val_loss = self.validate()
-                cer, wer, aoc, acc = self.precision(len(self.valid_annotation))
+                cer, wer, aoc, acc = self.precision(len(self.valid_gen))
 
                 info = f'{i:06d} -loss {val_loss:.4f} -acc {acc:.4f} -aoc {aoc:.4f} -wer {wer:.4f} -cer {cer:.4f}'
                 print(info)
@@ -116,8 +117,6 @@ class Trainer():
                     best_acc = acc
 
                 self.visualize_prediction()
-
-            self.save_weights(self.save_checkpoint)
 
     def step(self, batch):
         self.model.train()
