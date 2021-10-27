@@ -1,5 +1,6 @@
 from torch import nn
-from models.definitions.cnn import CNN
+
+from models.definitions.backbone.backbone import CNN
 from models.definitions.seqmodel.seq2seq import Seq2Seq
 from models.definitions.seqmodel.transformer import Transformer
 
