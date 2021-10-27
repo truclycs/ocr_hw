@@ -58,7 +58,7 @@ def create_dataset(output_path, root_dir, annotation_path):
 
 class OCRDataset(Dataset):
     def __init__(self, lmdb_path, root_dir, annotation_path, vocab, expected_height: int = 64,
-                 image_min_width: int = 64, image_max_width: int = 2048, transform=None):
+                 image_min_width: int = 64, image_max_width: int = 1024, transform=None):
         self.root_dir = root_dir
         self.vocab = vocab
         self.transform = transform
