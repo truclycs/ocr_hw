@@ -1,5 +1,7 @@
 import os
 import torch
+import shutil
+import warnings
 import argparse
 import numpy as np
 from datetime import datetime
@@ -14,6 +16,8 @@ from metrics.metrics import compute_metrics
 from loss.labelsmoothingloss import LabelSmoothingLoss
 from dataloader.data_augmentation import ImageAugTransform
 from dataloader.data_loader import ClusterRandomSampler, Collator, OCRDataset
+
+warnings.filterwarnings("ignore")
 
 
 class Logger():
@@ -31,7 +35,8 @@ class Logger():
 
 
 class Trainer():
-    def __init__(self, config, pretrained=True, augmentor=ImageAugTransform()):
+    def __init__(self, config_path, pretrained=True, augmentor=ImageAugTransform()):
+        config = load_yaml(config_path)
         self.device = config['device']
         self.vocab = Vocab(config['vocab'])
 
@@ -54,8 +59,10 @@ class Trainer():
 
         cur_time = datetime.now().strftime('%y%m%d%H%M')
         self.weight_dir = config['trainer']['weight_dir'] + cur_time + '/'
-        self.save_checkpoint = self.weight_dir + 'checkpoint_'
+        self.save_checkpoint = self.weight_dir + 'checkpoint.pth'
         self.logger = Logger(self.weight_dir + 'logger.log')
+
+        shutil.copy(config_path, self.weight_dir)
 
         self.model = OCR(config['vocab_size'],
                          config['backbone'],
@@ -97,7 +104,6 @@ class Trainer():
             total_loss += loss
 
             if i % self.display_cycle == 0:
-                self.save_weights(self.save_checkpoint + str(i) + '.pth')
                 cur_loss = total_loss / self.display_cycle
                 info = '{:06d} - loss: {:.4f} - lr: {:4f}'.format(i, cur_loss, self.optimizer.param_groups[0]['lr'])
                 print(info)
@@ -117,6 +123,7 @@ class Trainer():
                     best_acc = acc
 
                 self.visualize_prediction()
+            self.save_weights(self.save_checkpoint)
 
     def step(self, batch):
         self.model.train()
@@ -215,6 +222,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='config/vgg_seq2seq.yml')
     args = parser.parse_args()
-    config = load_yaml(args.config)
-    trainer = Trainer(config=config, pretrained=True)
+    trainer = Trainer(config_path=args.config, pretrained=True)
     trainer.train()

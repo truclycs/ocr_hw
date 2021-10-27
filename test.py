@@ -62,7 +62,7 @@ class Test():
             print(predict)
             print()
 
-            if sample is not None and len(predicts) > sample:
+            if sample and len(predicts) > sample:
                 break
 
         return predicts, targets, image_files
