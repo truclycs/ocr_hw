@@ -1,6 +1,7 @@
 ## 1. References
 [1] Attention Is All You Need: https://arxiv.org/abs/1706.03762 \
-[2] Github: https://github.com/pbcquoc/vietocr
+[2] Github: https://github.com/pbcquoc/vietocr \
+[3] Github: https://github.com/VinhLoiIT/vietnamese-htr
 
 ## 2. Dataset
 ### 2.1 Todo
