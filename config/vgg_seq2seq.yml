@@ -3,6 +3,10 @@ vocab: models/definitions/vocab.yml
 device: 'cuda'
 weights: models/weights/seq2seq/base_s2s.pth
 
+save_file:
+    excel: result_s2s.xlsx
+    text: wrong_case_s2s.txt
+
 trainer:
     batch_size: 16
     display_cycle: 50  
@@ -16,8 +20,8 @@ dataset:
     train_annotation: ./dataset/annotation/vtp/train.txt
     valid_annotation: ./dataset/annotation/vtp/val.txt
     test_annotation: ./dataset/annotation/vtp/test.txt
-    expected_height: 64
-    image_min_width: 64
+    expected_height: 32
+    image_min_width: 32
     image_max_width: 2048
 
 seq_modeling: seq2seq
@@ -47,14 +51,11 @@ cnn_args:
          [2, 2],
          [2, 1],
          [2, 1],
-         [1, 1]]
+         [2, 1]]
     ks: [[2, 2],
          [2, 2],
          [2, 1],
          [2, 1],
-         [1, 1]]
+         [2, 1]]
     hidden: 256
-
-save_file:
-    excel: result_s2s.xlsx
-    text: wrong_case_s2s.txt
+    dropout: 0.1
