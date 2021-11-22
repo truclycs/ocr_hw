@@ -1,41 +1,25 @@
 vocab_size: 233
 vocab: models/definitions/vocab.yml
 device: 'cuda'
-weights: models/weights/seq2seq/base/base_s2s.pth
-# weights: models/weights/seq2seq/vtp/2110191721/2110200347.pth
-# weights: models/weights/seq2seq/2110191721/checkpoint.pth
-# weights: models/weights/seq2seq/vtp/2110201652/2110202130.pth
-# weights: models/weights/seq2seq/general/2110261418/checkpoint.pth
-# weights: models/weights/seq2seq/general/2110261430/2110270839.pth
-# weights: models/weights/seq2seq/general/2110261430/2110262029.pth
-# weights: models/weights/seq2seq/general/2110261430/2110261600.pth
-# weights: models/weights/seq2seq/vtp/2110191721/2110200347.pth
-# weights: models/weights/seq2seq/vtp/2110201652/2110202130.pth
-# weights: models/weights/seq2seq/vtp/2110270915/2110270923.pth
-# weights: models/weights/seq2seq/general/2110271457/2110272340.pth
-# weights: models/weights/seq2seq/general/2110271457/2110272150.pth
-# weights: models/weights/seq2seq/DKKD/2111111715/2111112333.pth
-# weights: models/weights/seq2seq/DKKD/2111111217/2111131207.pth
-# weights: models/weights/seq2seq/DKKD/2111111715/2111130608.pth
-# weights: models/weights/seq2seq/DKKD/2111130608.pth
+weights: models/weights/seq2seq/base_s2s.pth
 
 save_file:
-    excel: result/DKKD/2111130608.xlsx
-    text: result/DKKD/2111130608.txt
+    excel: result_s2s.xlsx
+    text: wrong_case_s2s.txt
 
 trainer:
     batch_size: 16
-    display_cycle: 100
+    display_cycle: 50  
     valid_cycle: 1000
-    iters: 200000
-    weight_dir: models/weights/seq2seq/DKKD/
+    iters: 100000
+    weight_dir: models/weights/seq2seq/
 
 dataset:    
-    name: 'DKKD'
-    data_root: ./dataset/images/DKKD/
-    train_annotation: ./dataset/annotation/DKKD/train.txt
-    valid_annotation: ./dataset/annotation/DKKD/test.txt
-    test_annotation: ./dataset/annotation/DKKD/test.txt
+    name: 'vtp'
+    data_root: ./dataset/images/
+    train_annotation: ./dataset/annotation/vtp/train.txt
+    valid_annotation: ./dataset/annotation/vtp/val.txt
+    test_annotation: ./dataset/annotation/vtp/test.txt
     expected_height: 32
     image_min_width: 32
     image_max_width: 2048
@@ -49,7 +33,7 @@ transformer:
     dropout: 0.1
 
 optimizer:
-    max_lr: 0.0003
+    max_lr: 0.0002
     pct_start: 0.1
 
 dataloader:
