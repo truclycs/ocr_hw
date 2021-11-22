@@ -13,14 +13,13 @@ from models.definitions.vocab import Vocab
 
 
 class Predictor:
-    def __init__(self, config: Dict, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 1024,
-                 max_seq: int = 128, sos_token: int = 1, eos_token: int = 2, device: str = 'cpu') -> None:
+    def __init__(self, config: Dict, max_seq: int = 256, sos_token: int = 1, eos_token: int = 2) -> None:
         super(Predictor, self).__init__()
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = config['device']
 
-        self.image_height = image_height
-        self.image_min_width = image_min_width
-        self.image_max_width = image_max_width
+        self.image_height = config['dataset']['expected_height']
+        self.image_min_width = config['dataset']['image_min_width']
+        self.image_max_width = config['dataset']['image_max_width']
 
         self.max_seq = max_seq
         self.sos_token = sos_token
@@ -33,9 +32,9 @@ class Predictor:
                          config['cnn_args'],
                          config['transformer'],
                          config['seq_modeling']).to(self.device)
-        state_dict = torch.load(f=abs_path(config['weights']), map_location=device)
+        state_dict = torch.load(f=abs_path(config['weights']), map_location=self.device)
         self.model.load_state_dict(state_dict=state_dict)
-        self.model.eval().to(device)
+        self.model.eval().to(self.device)
 
     def preprocess(self, image: np.ndarray) -> Tuple[torch.Tensor]:
         sample = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -136,5 +135,5 @@ if __name__ == '__main__':
     text, char_probs = detector(image)
     print(f"TIME: {time.time() - begin:.4f}")
     print("TEXT:", text)
-    for i, c in enumerate(text):
-        print(f'{c}: {char_probs[i]:.4f}')
+    # for i, c in enumerate(text):
+    #     print(f'{c}: {char_probs[i]:.4f}')
