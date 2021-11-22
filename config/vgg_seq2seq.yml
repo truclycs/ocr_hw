@@ -1,6 +1,6 @@
 vocab_size: 233
 vocab: models/definitions/vocab.yml
-device: 'cpu'
+device: 'cuda'
 weights: models/weights/seq2seq/base/base_s2s.pth
 # weights: models/weights/seq2seq/vtp/2110191721/2110200347.pth
 # weights: models/weights/seq2seq/2110191721/checkpoint.pth
