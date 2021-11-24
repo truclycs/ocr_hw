@@ -90,6 +90,7 @@ class Trainer():
 
     def train(self):
         total_loss = 0
+        best_loss = 10 ** 5
         best_acc = 0
         data_iter = iter(self.train_gen)
 
@@ -119,8 +120,12 @@ class Trainer():
                 self.logger.log(info)
 
                 if acc > best_acc:
-                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + ".pth")
+                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_acc.pth")
                     best_acc = acc
+
+                if val_loss < best_loss:
+                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_loss.pth")
+                    best_loss = val_loss
 
                 self.visualize_prediction()
             self.save_weights(self.save_checkpoint)
