@@ -1,11 +1,10 @@
-
 import torch
 from torch import nn
 from torchvision import models
 
 
 class VGG(nn.Module):
-    def __init__(self, ss, ks, hidden, pretrained=True, dropout=0.5):
+    def __init__(self, ss, ks, hidden, pretrained=True, dropout=0.1):
         super(VGG, self).__init__()
         cnn = models.vgg19_bn(pretrained=pretrained)
         pool_idx = 0
@@ -28,5 +27,5 @@ class VGG(nn.Module):
         return conv
 
 
-def vgg19(ss, ks, hidden, pretrained=True, dropout=0.5):
+def vgg19(ss, ks, hidden, pretrained=True, dropout=0.1):
     return VGG(ss, ks, hidden, pretrained, dropout)
