@@ -8,13 +8,11 @@ import random
 import numpy as np
 from tqdm import tqdm
 from PIL import Image
-from PIL import ImageFile
 from collections import defaultdict
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import Sampler
 
 from utils import process_image, resize
-ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def write_cache(env, cache):
@@ -30,7 +28,7 @@ def create_dataset(output_path, root_dir, annotation_path):
     cache = {}
     count = 0
     env = lmdb.open(output_path, map_size=1099511627776)
-    pbar = tqdm(range(len(annotations)), ncols=100, desc='Create {}'.format(output_path))
+    pbar = tqdm(range(len(annotations)), ncols=100, desc=f'Create {output_path}')
 
     for i in pbar:
         image_file, label = annotations[i]
@@ -58,7 +56,7 @@ def create_dataset(output_path, root_dir, annotation_path):
 
 class OCRDataset(Dataset):
     def __init__(self, lmdb_path, root_dir, annotation_path, vocab, expected_height: int = 64,
-                 image_min_width: int = 64, image_max_width: int = 1024, transform=None):
+                 image_min_width: int = 64, image_max_width: int = 4096, transform=None):
         self.root_dir = root_dir
         self.vocab = vocab
         self.transform = transform
@@ -73,27 +71,39 @@ class OCRDataset(Dataset):
         else:
             create_dataset(lmdb_path, root_dir, annotation_path)
 
-        self.env = lmdb.open(lmdb_path, max_readers=8, readonly=True, lock=False, readahead=False, meminit=False)
+        self.env = lmdb.open(lmdb_path,
+                             max_readers=8,
+                             readonly=True,
+                             lock=False,
+                             readahead=False,
+                             meminit=False)
+
         self.txn = self.env.begin(write=False)
         self.n_samples = int(self.txn.get('num-samples'.encode()))
         self.build_cluster_indices()
 
     def build_cluster_indices(self):
         self.cluster_indices = defaultdict(list)
-        pbar = tqdm(range(self.__len__()), desc='{} build cluster'.format(self.lmdb_path),
-                    ncols=100, position=0, leave=True)
+        pbar = tqdm(range(self.__len__()),
+                    desc='{} build cluster'.format(self.lmdb_path),
+                    ncols=100,
+                    position=0,
+                    leave=True)
 
         for i in pbar:
-            bucket = self.get_bucket(i)
-            self.cluster_indices[bucket].append(i)
+            bucket = self.get_bucket(i)  # get new_width of image i follow expected_height
+            self.cluster_indices[bucket].append(i)  # batch image i to bucket<new_width>
 
     def get_bucket(self, idx):
         key = 'dim-%09d' % idx
         dim_image = self.txn.get(key.encode())
         dim_image = np.fromstring(dim_image, dtype=np.int32)
         image_height, image_width = dim_image
-        new_width, _ = resize(image_width, image_height, self.expected_height,
-                              self.image_min_width, self.image_max_width)
+        new_width, _ = resize(image_width,
+                              image_height,
+                              self.expected_height,
+                              self.image_min_width,
+                              self.image_max_width)
         return new_width
 
     def read_buffer(self, idx):
