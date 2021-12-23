@@ -15,7 +15,7 @@ from models.definitions.vocab import Vocab
 class Predictor:
     def __init__(self, config: Dict, max_seq: int = 256, sos_token: int = 1, eos_token: int = 2) -> None:
         super(Predictor, self).__init__()
-        self.device = config['device']
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.image_height = config['dataset']['expected_height']
         self.image_min_width = config['dataset']['image_min_width']
@@ -67,7 +67,7 @@ class Predictor:
             output, memory = self.model.transformer.forward_decoder(tgt_inp, memory)
             output = nn.Softmax(dim=-1)(output)
             output = output.detach().cpu().data
-            values, indices = torch.topk(output, 4)
+            values, indices = torch.topk(output, 5)
             values = list(values[:, -1, 0])
             indices = list(indices[:, -1, 0])
             char_probs.append(values)
@@ -122,7 +122,7 @@ class Predictor:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', default='test/images/test.png')
+    parser.add_argument('--image', default='scripts/images/test.png')
     parser.add_argument('--config', default='config/vgg_seq2seq.yml')
     args = parser.parse_args()
 

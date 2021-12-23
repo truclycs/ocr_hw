@@ -1,7 +1,6 @@
 import os
 import torch
 import shutil
-import warnings
 import argparse
 import numpy as np
 from datetime import datetime
@@ -16,8 +15,6 @@ from metrics.metrics import compute_metrics
 from loss.labelsmoothingloss import LabelSmoothingLoss
 from dataloader.data_augmentation import ImageAugTransform
 from dataloader.data_loader import ClusterRandomSampler, Collator, OCRDataset
-
-warnings.filterwarnings("ignore")
 
 
 class Logger():
@@ -59,7 +56,7 @@ class Trainer():
 
         cur_time = datetime.now().strftime('%y%m%d%H%M')
         self.weight_dir = config['trainer']['weight_dir'] + cur_time + '/'
-        self.save_checkpoint = self.weight_dir + 'checkpoint.pth'
+        self.save_checkpoint = self.weight_dir + 'cur_checkpoint.pth'
         self.logger = Logger(self.weight_dir + 'logger.log')
 
         shutil.copy(config_path, self.weight_dir)
@@ -82,11 +79,16 @@ class Trainer():
         if self.image_aug:
             transforms = augmentor
 
-        self.train_gen = self.data_gen(f'dataset/train_{self.dataset_name}', self.data_root,
-                                       self.train_annotation, self.masked_language_model, transform=transforms)
+        self.train_gen = self.data_gen(f'dataset/train_{self.dataset_name}',
+                                       self.data_root,
+                                       self.train_annotation,
+                                       self.masked_language_model,
+                                       transform=transforms)
 
-        self.valid_gen = self.data_gen(f'dataset/valid_{self.dataset_name}', self.data_root,
-                                       self.valid_annotation, masked_language_model=False)
+        self.valid_gen = self.data_gen(f'dataset/valid_{self.dataset_name}',
+                                       self.data_root,
+                                       self.valid_annotation,
+                                       masked_language_model=False)
 
     def train(self):
         total_loss = 0
@@ -120,11 +122,13 @@ class Trainer():
                 self.logger.log(info)
 
                 if acc > best_acc:
-                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_acc.pth")
+                    # self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_acc.pth")
+                    self.save_weights(self.weight_dir + "best_acc.pth")
                     best_acc = acc
 
                 if val_loss < best_loss:
-                    self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_loss.pth")
+                    # self.save_weights(self.weight_dir + datetime.now().strftime('%y%m%d%H%M') + "_loss.pth")
+                    self.save_weights(self.weight_dir + "best_loss.pth")
                     best_loss = val_loss
 
                 self.visualize_prediction()
@@ -133,7 +137,9 @@ class Trainer():
     def step(self, batch):
         self.model.train()
         batch = self.batch_to_device(batch)
-        outputs = self.model(batch['image'], batch['tgt_input'], tgt_key_padding_mask=batch['tgt_padding_mask'])
+        outputs = self.model(batch['image'],
+                             batch['tgt_input'],
+                             tgt_key_padding_mask=batch['tgt_padding_mask'])
         outputs = outputs.view(-1, outputs.size(2))
         tgt_output = batch['tgt_output'].view(-1)
         loss = self.criterion(outputs, tgt_output)
@@ -150,7 +156,9 @@ class Trainer():
         with torch.no_grad():
             for batch in self.valid_gen:
                 batch = self.batch_to_device(batch)
-                outputs = self.model(batch['image'], batch['tgt_input'], tgt_key_padding_mask=batch['tgt_padding_mask'])
+                outputs = self.model(batch['image'],
+                                     batch['tgt_input'],
+                                     tgt_key_padding_mask=batch['tgt_padding_mask'])
                 outputs = outputs.flatten(0, 1)
                 tgt_output = batch['tgt_output'].flatten()
                 loss = self.criterion(outputs, tgt_output)
@@ -187,7 +195,7 @@ class Trainer():
             actual_sent = actual_sents[vis_idx]
             print("Actuals: ", actual_sent)
             print("Predict: ", pred_sent)
-            print()
+            print("==>", actual_sent == pred_sent)
 
     def load_weight(self, filename):
         state_dict = torch.load(filename, map_location=torch.device(self.device))
@@ -213,14 +221,19 @@ class Trainer():
 
     def data_gen(self, lmdb_path, data_root, annotation, masked_language_model=True, transform=None):
         dataset = OCRDataset(lmdb_path=lmdb_path,
-                             root_dir=data_root, annotation_path=annotation,
-                             vocab=self.vocab, transform=transform,
+                             root_dir=data_root,
+                             annotation_path=annotation,
+                             vocab=self.vocab,
+                             transform=transform,
                              expected_height=self.expected_height,
                              image_min_width=self.image_min_width,
                              image_max_width=self.image_max_width)
         sampler = ClusterRandomSampler(dataset, self.batch_size, True)
         collate_fn = Collator(masked_language_model)
-        return DataLoader(dataset, batch_sampler=sampler, collate_fn=collate_fn, **self.data_loader)
+        return DataLoader(dataset,
+                          batch_sampler=sampler,
+                          collate_fn=collate_fn,
+                          **self.data_loader)
 
 
 if __name__ == '__main__':

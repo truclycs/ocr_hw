@@ -56,14 +56,14 @@ def eval_config(config):
     return config
 
 
-def resize(width, height, expected_height: int = 64, image_min_width: int = 64, image_max_width: int = 1024):
+def resize(width, height, expected_height: int = 64, image_min_width: int = 64, image_max_width: int = 4096):
     new_width = expected_height * width // height
     new_width = np.ceil(new_width/10) * 10
     new_width = np.clip(new_width, image_min_width, image_max_width)
     return int(new_width), expected_height
 
 
-def process_image(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 1024):
+def process_image(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 4096):
     image = image.convert('RGB')
     width, height = image.size
     new_width, image_height = resize(width, height, image_height, image_min_width, image_max_width)
@@ -72,7 +72,7 @@ def process_image(image, image_height: int = 64, image_min_width: int = 64, imag
     return image / 255
 
 
-def process_input(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 1024):
+def process_input(image, image_height: int = 64, image_min_width: int = 64, image_max_width: int = 4096):
     image = process_image(image, image_height, image_min_width, image_max_width)
     image = image[np.newaxis, ...]
     image = torch.FloatTensor(image)

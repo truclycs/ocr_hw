@@ -60,6 +60,7 @@ class Test():
             print(case, batch['filenames'])
             print(target)
             print(predict)
+            print("==>", target == predict)
             print()
 
             if sample and len(predicts) > sample:
@@ -73,23 +74,18 @@ class Test():
         return compute_metrics(predicts, targets, image_files, self.result_text_file)
 
     def batch_to_device(self, batch):
-        image = batch['image'].to(self.device, non_blocking=True)
-        tgt_input = batch['tgt_input'].to(self.device, non_blocking=True)
-        tgt_output = batch['tgt_output'].to(self.device, non_blocking=True)
-        tgt_padding_mask = batch['tgt_padding_mask'].to(self.device, non_blocking=True)
-
-        batch = {'image': image,
-                 'tgt_input': tgt_input,
-                 'tgt_output': tgt_output,
-                 'tgt_padding_mask': tgt_padding_mask,
-                 'filenames': batch['filenames']}
-
-        return batch
+        return {'image': batch['image'].to(self.device, non_blocking=True),
+                'tgt_input': batch['tgt_input'].to(self.device, non_blocking=True),
+                'tgt_output': batch['tgt_output'].to(self.device, non_blocking=True),
+                'tgt_padding_mask': batch['tgt_padding_mask'].to(self.device, non_blocking=True),
+                'filenames': batch['filenames']}
 
     def data_gen(self, lmdb_path, data_root, annotation, masked_language_model=True, transform=None):
         dataset = OCRDataset(lmdb_path=lmdb_path,
-                             root_dir=data_root, annotation_path=annotation,
-                             vocab=self.vocab, transform=transform,
+                             root_dir=data_root,
+                             annotation_path=annotation,
+                             vocab=self.vocab,
+                             transform=transform,
                              expected_height=self.config['dataset']['expected_height'],
                              image_min_width=self.config['dataset']['image_min_width'],
                              image_max_width=self.config['dataset']['image_max_width'])
@@ -100,19 +96,35 @@ class Test():
                           collate_fn=collate_fn,
                           **self.config['dataloader'])
 
+    # def save_predicted_result(self, targets, predicts, images):
+    #     info = defaultdict()
+    #     for image, target, predict in zip(images, targets, predicts):
+    #         image = image.split('/')[-1]
+    #         image = image.split('_')
+    #         name = image[-1]
+    #         label = '_'.join(image[i] for i in range(len(image) - 1))
+
+    #         if name not in info:
+    #             info[name] = {label: target, label + '_res': predict}
+    #         else:
+    #             info[name][label] = target
+    #             info[name][label + '_res'] = predict
+
+    #     data = pd.ExcelWriter(self.result_excel_file)
+    #     info = pd.DataFrame(info)
+    #     info.to_excel(data)
+    #     data.save()
+
     def save_predicted_result(self, targets, predicts, images):
         info = defaultdict()
         for image, target, predict in zip(images, targets, predicts):
-            image = image.split('/')[-1]
-            image = image.split('_')
-            name = image[-1]
-            label = '_'.join(image[i] for i in range(len(image) - 1))
-
-            if name not in info:
-                info[name] = {label: target, label + '_res': predict}
+            image_file = image.split('/')[-1]
+            if 'label' not in info:
+                info['label'] = {image_file: target}
+                info['predict'] = {image_file: predict}
             else:
-                info[name][label] = target
-                info[name][label + '_res'] = predict
+                info['label'][image_file] = target
+                info['predict'][image_file] = predict
 
         data = pd.ExcelWriter(self.result_excel_file)
         info = pd.DataFrame(info)
