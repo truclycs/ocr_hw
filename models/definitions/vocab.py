@@ -15,7 +15,7 @@ class Vocab():
         self.i2c[0] = '<pad>'
         self.i2c[1] = '<sos>'
         self.i2c[2] = '<eos>'
-        self.i2c[3] = '*'
+        self.i2c[3] = '<mask>'
 
     def encode(self, chars):
         return [self.go] + [self.c2i[c] for c in chars] + [self.eos]

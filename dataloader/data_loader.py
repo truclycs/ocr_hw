@@ -31,6 +31,8 @@ def create_dataset(output_path, root_dir, annotation_path):
     pbar = tqdm(range(len(annotations)), ncols=100, desc=f'Create {output_path}')
 
     for i in pbar:
+        if len(annotations[i]) != 2:
+            continue
         image_file, label = annotations[i]
 
         with open(os.path.join(root_dir, image_file), 'rb') as f:
