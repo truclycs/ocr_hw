@@ -55,7 +55,7 @@ class Predictor:
     def process(self, sample: torch.Tensor):
         with torch.no_grad():
             feature = self.model.cnn(sample)
-            memory = self.model.transformer.forward_encoder(feature)
+            memory = self.model.seq_model.forward_encoder(feature)
         return sample, memory
 
     def postprocess(self, sample, memory):
@@ -64,7 +64,7 @@ class Predictor:
 
         while len(char_probs) <= self.max_seq and not np.any(np.asarray(translated_sentence).T == self.eos_token):
             tgt_inp = torch.LongTensor(translated_sentence).to(self.device)
-            output, memory = self.model.transformer.forward_decoder(tgt_inp, memory)
+            output, memory = self.model.seq_model.forward_decoder(tgt_inp, memory)
             output = nn.Softmax(dim=-1)(output)
             output = output.detach().cpu().data
             values, indices = torch.topk(output, 5)
