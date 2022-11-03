@@ -61,7 +61,7 @@ class Trainer():
 
         shutil.copy(config_path, self.weight_dir)
 
-        self.model = OCR(config['vocab_size'],
+        self.model = OCR(len(self.vocab),
                          config['backbone'],
                          config['cnn_args'],
                          config['transformer'],

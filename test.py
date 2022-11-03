@@ -28,7 +28,7 @@ class Test():
 
         self.vocab = Vocab(config['vocab'])
 
-        self.model = OCR(config['vocab_size'],
+        self.model = OCR(len(self.vocab),
                          config['backbone'],
                          config['cnn_args'],
                          config['transformer'],

@@ -1,4 +1,3 @@
-vocab_size: 233
 vocab: models/definitions/vocab.yml
 device: 'cuda'
 weights: models/weights/seq2seq/base_s2s.pth
