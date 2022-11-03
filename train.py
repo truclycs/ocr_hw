@@ -163,8 +163,15 @@ class Trainer():
                 tgt_output = batch['tgt_output'].flatten()
                 loss = self.criterion(outputs, tgt_output)
                 total_loss.append(loss.item())
+
+                del outputs
+                del loss
+
+        total_loss = np.mean(total_loss)
+
         self.model.train()
-        return np.mean(total_loss)
+
+        return total_loss
 
     def predict(self, sample=None):
         pred_sents = []
