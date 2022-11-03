@@ -86,8 +86,8 @@ class Predictor:
         bucket = defaultdict(list)
         bucket_idx = defaultdict(list)
         bucket_pred = {}
-        string_predicts = [0]*len(images)
-        probs = [0]*len(images)
+        string_predicts = [0] * len(images)
+        probs = [0] * len(images)
 
         for i, image in enumerate(images):
             image = process_input(image, self.image_height, self.image_min_width, self.image_max_width)
