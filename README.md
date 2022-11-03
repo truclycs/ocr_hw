@@ -46,8 +46,8 @@ http://tc11.cvc.uab.es/datasets/HANDS-VNOnDB2018_1/
 
 ## 4. Usage
 ### 4.1 Todo
-- [ ] Predicting with batch images.
-- [ ] Experience with other backbones (current: VGG19, ResNet50).
+- [x] Predicting with batch images.
+- [x] Experience with other backbones (vgg11, vgg19, resnet50, resnext50).
 
 ### 4.2 Usage
 * Training
