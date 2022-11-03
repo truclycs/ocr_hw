@@ -14,6 +14,15 @@ class Transformer(nn.Module):
         self.fc = nn.Linear(d_model, vocab_size)
 
     def forward(self, src, tgt, src_key_padding_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None):
+        """
+        Shape:
+            - src: (W, N, C)
+            - tgt: (T, N)
+            - src_key_padding_mask: (N, S)
+            - tgt_key_padding_mask: (N, T)
+            - memory_key_padding_mask: (N, S)
+            - output: (N, T, E)
+        """
         output = self.transformer(self.pos_enc(src * np.sqrt(self.d_model)),
                                   self.pos_enc(self.embed_tgt(tgt) * np.sqrt(self.d_model)),
                                   tgt_mask=self.gen_nopeek_mask(tgt.shape[0]).to(src.device),

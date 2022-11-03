@@ -68,16 +68,32 @@ class Seq2Seq(nn.Module):
         self.decoder = Decoder(vocab_size, decoder_embedded, encoder_hidden, decoder_hidden, dropout, attn)
 
     def forward_encoder(self, src):
+        """
+        src: timestep x batch_size x channel
+        hidden: batch_size x hid_dim
+        encoder_outputs: src_len x batch_size x hid_dim
+        """
         encoder_outputs, hidden = self.encoder(src)
         return (hidden, encoder_outputs)
 
     def forward_decoder(self, tgt, memory):
+        """
+        tgt: timestep x batch_size 
+        hidden: batch_size x hid_dim
+        encouder: src_len x batch_size x hid_dim
+        output: batch_size x 1 x vocab_size
+        """
         hidden, encoder_outputs = memory
         output, hidden, _ = self.decoder(tgt[-1], hidden, encoder_outputs)
         output = output.unsqueeze(1)
         return output, (hidden, encoder_outputs)
 
     def forward(self, src, trg):
+        """
+        src: time_step x batch_size
+        trg: time_step x batch_size
+        outputs: batch_size x time_step x vocab_size
+        """
         batch_size = src.shape[1]
         trg_len = trg.shape[0]
         trg_vocab_size = self.decoder.output_dim
