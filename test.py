@@ -122,5 +122,5 @@ if __name__ == '__main__':
     test = Test(config)
     cer, wer, aoc, acc = test.precision(len(test.test_gen))
     end_time = time.time()
-    total_time = (end_time-start_time) / len(test.test_gen)
+    total_time = (end_time - start_time) / len(test.test_gen)
     print(f"acc: {acc:.4f} -aoc: {aoc:.4f} -wer: {wer:.4f} -cer: {cer:.4f} -time: {total_time:.4f}")
