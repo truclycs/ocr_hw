@@ -1,6 +1,6 @@
 from torch import nn
 
-from models.definitions.backbone.vgg import vgg19
+from models.definitions.backbone.vgg import vgg
 from models.definitions.backbone.resnet import resnet50
 from models.definitions.backbone.resnet_pretrained import resnext50_32x4d
 
@@ -8,8 +8,8 @@ from models.definitions.backbone.resnet_pretrained import resnext50_32x4d
 class CNN(nn.Module):
     def __init__(self, backbone, **kwargs):
         super(CNN, self).__init__()
-        if backbone == 'vgg19':
-            self.model = vgg19(**kwargs)
+        if 'vgg' in backbone:
+            self.model = vgg(backbone, **kwargs)
         elif backbone == 'resnet50':
             self.model = resnet50(**kwargs)
         elif backbone == 'resnext50':

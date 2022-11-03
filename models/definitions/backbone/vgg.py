@@ -4,9 +4,14 @@ from torchvision import models
 
 
 class VGG(nn.Module):
-    def __init__(self, ss, ks, hidden, pretrained=True, dropout=0.1):
+    def __init__(self, backbone, ss, ks, hidden, pretrained=True, dropout=0.1):
         super(VGG, self).__init__()
-        cnn = models.vgg19_bn(pretrained=pretrained)
+
+        if backbone == 'vgg19':
+            cnn = models.vgg19_bn(pretrained=pretrained)
+        elif backbone == 'vgg11':
+            cnn = models.vgg11_bn(pretrained=pretrained)
+
         pool_idx = 0
         for i, layer in enumerate(cnn.features):
             if isinstance(layer, torch.nn.MaxPool2d):
@@ -27,5 +32,5 @@ class VGG(nn.Module):
         return conv
 
 
-def vgg19(ss, ks, hidden, pretrained=True, dropout=0.1):
-    return VGG(ss, ks, hidden, pretrained, dropout)
+def vgg(backbone, ss, ks, hidden, pretrained=True, dropout=0.1):
+    return VGG(backbone, ss, ks, hidden, pretrained, dropout)
