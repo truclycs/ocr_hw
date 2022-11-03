@@ -96,25 +96,6 @@ class Test():
                           collate_fn=collate_fn,
                           **self.config['dataloader'])
 
-    # def save_predicted_result(self, targets, predicts, images):
-    #     info = defaultdict()
-    #     for image, target, predict in zip(images, targets, predicts):
-    #         image = image.split('/')[-1]
-    #         image = image.split('_')
-    #         name = image[-1]
-    #         label = '_'.join(image[i] for i in range(len(image) - 1))
-
-    #         if name not in info:
-    #             info[name] = {label: target, label + '_res': predict}
-    #         else:
-    #             info[name][label] = target
-    #             info[name][label + '_res'] = predict
-
-    #     data = pd.ExcelWriter(self.result_excel_file)
-    #     info = pd.DataFrame(info)
-    #     info.to_excel(data)
-    #     data.save()
-
     def save_predicted_result(self, targets, predicts, images):
         info = defaultdict()
         for image, target, predict in zip(images, targets, predicts):
@@ -141,4 +122,5 @@ if __name__ == '__main__':
     test = Test(config)
     cer, wer, aoc, acc = test.precision(len(test.test_gen))
     end_time = time.time()
-    print(f"acc: {acc:.4f} -aoc: {aoc:.4f} -wer: {wer:.4f} -cer: {cer:.4f} -time: {(end_time-start_time) / len(test.test_gen):.4f}")
+    total_time = (end_time-start_time) / len(test.test_gen)
+    print(f"acc: {acc:.4f} -aoc: {aoc:.4f} -wer: {wer:.4f} -cer: {cer:.4f} -time: {total_time:.4f}")
