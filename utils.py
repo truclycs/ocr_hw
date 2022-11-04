@@ -57,7 +57,7 @@ def eval_config(config):
 
 
 def resize(width, height, expected_height: int = 64, image_min_width: int = 64, image_max_width: int = 4096):
-    new_width = expected_height * width // height
+    new_width = int(expected_height * float(width) / float(height))
     new_width = np.ceil(new_width / 10) * 10
     new_width = np.clip(new_width, image_min_width, image_max_width)
     return int(new_width), expected_height
