@@ -205,4 +205,4 @@ class ConvSeq2Seq(nn.Module):
         # each word in the trg sentence
         output, attention = self.decoder(trg, encoder_conved, encoder_combined)
 
-        return output  #, attention
+        return output  # , attention

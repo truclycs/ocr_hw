@@ -99,8 +99,7 @@ class OCRDataset(Dataset):
     def get_bucket(self, idx):
         key = 'dim-%09d' % idx
         dim_image = self.txn.get(key.encode())
-        dim_image = np.fromstring(dim_image, dtype=np.int32)
-        image_height, image_width = dim_image
+        image_height, image_width = np.fromstring(dim_image, dtype=np.int32)
         new_width, _ = resize(image_width,
                               image_height,
                               self.expected_height,
@@ -138,22 +137,59 @@ class OCRDataset(Dataset):
         return self.n_samples
 
 
+# class ClusterRandomSampler(Sampler):
+#     def __init__(self, data_source, batch_size, shuffle=True):
+#         self.data_source = data_source
+#         self.batch_size = batch_size
+#         self.shuffle = shuffle
+#         self.batch_lists = []
+#         for cluster, cluster_indices in self.data_source.cluster_indices.items():
+#             batches = [cluster_indices[i: i + self.batch_size] for i in range(0, len(cluster_indices), self.batch_size)]
+#             self.batch_lists.extend(batches)
+
+#     def __iter__(self):
+#         if self.shuffle:
+#             random.shuffle(self.batch_lists)
+#             for batch in self.batch_lists:
+#                 random.shuffle(batch)
+#         return iter(self.batch_lists)
+
+#     def __len__(self):
+#         return len(self.data_source)
+
 class ClusterRandomSampler(Sampler):
     def __init__(self, data_source, batch_size, shuffle=True):
         self.data_source = data_source
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.batch_lists = []
-        for cluster, cluster_indices in self.data_source.cluster_indices.items():
-            batches = [cluster_indices[i: i + self.batch_size] for i in range(0, len(cluster_indices), self.batch_size)]
-            self.batch_lists.extend(batches)
+
+    def flatten_list(self, lst):
+        return [item for sublist in lst for item in sublist]
 
     def __iter__(self):
+        batch_lists = []
+
+        for _, cluster_indices in self.data_source.cluster_indices.items():
+
+            if self.shuffle:
+                random.shuffle(cluster_indices)
+
+            batches = [cluster_indices[i:i + self.batch_size] for i in range(0, len(cluster_indices), self.batch_size)]
+            batches = [_ for _ in batches if len(_) == self.batch_size]
+
+            if self.shuffle:
+                random.shuffle(batches)
+
+            batch_lists.append(batches)
+
+        lst = self.flatten_list(batch_lists)
+
         if self.shuffle:
-            random.shuffle(self.batch_lists)
-            for batch in self.batch_lists:
-                random.shuffle(batch)
-        return iter(self.batch_lists)
+            random.shuffle(lst)
+
+        lst = self.flatten_list(lst)
+
+        return iter(lst)
 
     def __len__(self):
         return len(self.data_source)
@@ -181,6 +217,7 @@ class Collator(object):
         tgt_output = np.roll(tgt_input, -1, 0).T
         tgt_output[:, -1] = 0
 
+        # Random mask token
         if self.masked_language_model:
             mask = np.random.random(size=tgt_input.shape) < 0.05
             mask = mask & (tgt_input != 0) & (tgt_input != 1) & (tgt_input != 2)

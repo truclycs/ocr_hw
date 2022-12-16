@@ -237,9 +237,16 @@ class Trainer():
                              image_max_width=self.image_max_width)
         sampler = ClusterRandomSampler(dataset, self.batch_size, True)
         collate_fn = Collator(masked_language_model)
+        # return DataLoader(dataset,
+        #                   batch_sampler=sampler,
+        #                   collate_fn=collate_fn,
+        #                   **self.data_loader)
         return DataLoader(dataset,
-                          batch_sampler=sampler,
+                          batch_size=self.batch_size,
+                          sampler=sampler,
                           collate_fn=collate_fn,
+                          shuffle=False,
+                          drop_last=False,
                           **self.data_loader)
 
 
